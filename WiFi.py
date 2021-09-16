@@ -22,8 +22,6 @@ class WiFi:
         self._mode = None
         self._ssid = None
         self._password = None
-        self.event_started = asyncio.Event()
-        self.event_stopping = asyncio.Event()
 
     async def start(self):
         try:
@@ -43,7 +41,6 @@ class WiFi:
 
     async def start_sta_connect(self, ssid, password, new_config):
         # Disable AP mode
-        self._set_stopping()
         network.WLAN(network.AP_IF).active(False)
 
         sta = network.WLAN(network.STA_IF)
@@ -93,11 +90,9 @@ class WiFi:
         self._password = password
         ip, _, _, _ = sta.ifconfig()
         self.logger.info("connected to {}, ip={}.".format(ssid, ip))
-        self._set_started()
 
     def start_ap(self):
         # Disable STA mode
-        self._set_stopping()
         network.WLAN(network.STA_IF).active(False)
 
         ap = network.WLAN(network.AP_IF)
@@ -109,19 +104,10 @@ class WiFi:
         self._password = AP_PASS
         ip, _, _, _ = ap.ifconfig()
         self.logger.info("started AP <{}> pass={}, ip={}".format(AP_SSID, AP_PASS, ip))
-        self._set_started()
 
         config = { C_MODE: MODE_AP }
         config_parser.save_dict(CONFIG_FILE, config)
         self.logger.info("config saved.")
-
-    def _set_started(self):
-        self.event_stopping.clear()
-        self.event_started.set()
-
-    def _set_stopping(self):
-        self.event_started.clear()
-        self.event_stopping.set()
 
     def get_mode(self):
         return self._mode

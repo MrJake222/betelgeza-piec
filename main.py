@@ -11,7 +11,7 @@ LOGLEVEL = Logger.DEBUG
 logger = Logger.Logger("main", loglevel=LOGLEVEL)
 wifi = WiFi.WiFi(loglevel=LOGLEVEL)
 srv = WebServer(loglevel=LOGLEVEL)
-mcast = Multicast("esp8266", wifi, loglevel=Logger.TRACE)
+mcast = Multicast("esp8266", wifi, loglevel=LOGLEVEL)
 
 @srv.route("/set_config", methods="GET")
 async def set_config_get(req: WebRequest, resp: WebResponse):
@@ -19,7 +19,13 @@ async def set_config_get(req: WebRequest, resp: WebResponse):
     resp.header("content-type", "text/html")
 
     resp.body("<h1>Set config</h1>")
-    resp.body("<h3>Current mode: {} {}</h3>".format(wifi.get_mode_str(), wifi.get_ssid()))
+    resp.body("<h3>Current mode: {}</h3>".format(wifi.get_mode_str()))
+    resp.body("<h3>SSID: {}</h3>".format(wifi.get_ssid()))
+
+    resp.body("<div>")
+    # for ssid, bssid, channel, rssi, authmode, hidden in
+    resp.body("")
+    resp.body("</div>")
 
     resp.body("<form action='/set_config' method='POST'>")
     resp.body("<input type='radio' name='mode' value='ap'/> AP")
