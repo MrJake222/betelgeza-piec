@@ -1,5 +1,5 @@
 import uasyncio as asyncio
-import logger.Logger as Logger
+import Logger.Logger as Logger
 import config_parser
 import network
 
@@ -22,6 +22,8 @@ class WiFi:
         self._mode = None
         self._ssid = None
         self._password = None
+        self.event_started = asyncio.Event()
+        self.event_stopping = asyncio.Event()
 
     async def start(self):
         try:
@@ -33,6 +35,7 @@ class WiFi:
                 await self.start_sta_connect(config[C_SSID], config[C_PASS], new_config=False)
             else:
                 self.logger.debug("starting AP ssid={}.".format(AP_SSID))
+                self.start_ap()
 
         except OSError:
             self.logger.debug("no config file, starting AP mode.")
@@ -40,6 +43,7 @@ class WiFi:
 
     async def start_sta_connect(self, ssid, password, new_config):
         # Disable AP mode
+        self._set_stopping()
         network.WLAN(network.AP_IF).active(False)
 
         sta = network.WLAN(network.STA_IF)
@@ -47,7 +51,8 @@ class WiFi:
 
         if sta.isconnected():
             sta.disconnect()
-            await asyncio.sleep(1)
+            while sta.isconnected():
+                await asyncio.sleep(0.1)
 
         sta.connect(ssid, password)
 
@@ -72,7 +77,7 @@ class WiFi:
                     # probably wrong password
                     # revert to AP
                     # TODO LEDs
-                    self.logger.info("reverting WiFi configuration. starting {} mode".format(self.getModeStr()))
+                    self.logger.info("reverting WiFi configuration. starting {} mode".format(self.get_mode_str()))
 
                     if self._mode == MODE_AP:
                         self.start_ap()
@@ -88,9 +93,11 @@ class WiFi:
         self._password = password
         ip, _, _, _ = sta.ifconfig()
         self.logger.info("connected to {}, ip={}.".format(ssid, ip))
+        self._set_started()
 
     def start_ap(self):
         # Disable STA mode
+        self._set_stopping()
         network.WLAN(network.STA_IF).active(False)
 
         ap = network.WLAN(network.AP_IF)
@@ -102,24 +109,43 @@ class WiFi:
         self._password = AP_PASS
         ip, _, _, _ = ap.ifconfig()
         self.logger.info("started AP <{}> pass={}, ip={}".format(AP_SSID, AP_PASS, ip))
+        self._set_started()
 
         config = { C_MODE: MODE_AP }
         config_parser.save_dict(CONFIG_FILE, config)
         self.logger.info("config saved.")
 
-    # def getWifiConfig(self):
-    #     return {
-    #         "mode": self.getModeStr(),
-    #         "ssid": self._ssid
-    #     }
+    def _set_started(self):
+        self.event_stopping.clear()
+        self.event_started.set()
 
-    def getMode(self):
+    def _set_stopping(self):
+        self.event_started.clear()
+        self.event_stopping.set()
+
+    def get_mode(self):
         return self._mode
 
-    def getSSID(self):
-        return self._ssid
-
-    def getModeStr(self):
+    def get_mode_str(self):
         if self._mode == MODE_STA: return "STA"
         elif self._mode == MODE_AP: return "AP"
         else: return "<unspecified>"
+
+    def get_ssid(self):
+        return self._ssid
+
+    def get_active_interface(self):
+        if self._mode == MODE_AP:
+            return network.WLAN(network.AP_IF)
+        elif self._mode == MODE_STA:
+            return network.WLAN(network.STA_IF)
+        else:
+            return None
+
+    def get_current_ip(self):
+        wlan = self.get_active_interface()
+        if wlan == None:
+            return None
+
+        ip, _, _, _ = wlan.ifconfig()
+        return ip

@@ -1,4 +1,4 @@
-import logger.colors as c
+import Logger.colors as c
 
 ERROR = 1
 WARN = 2

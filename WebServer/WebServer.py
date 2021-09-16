@@ -1,4 +1,4 @@
-import logger.Logger as Logger
+import Logger.Logger as Logger
 import uasyncio as asyncio
 from WebServer.HTTPException import *
 from WebServer.WebRequest import WebRequest
@@ -18,6 +18,12 @@ class WebServer:
 
         self.srv = await asyncio.start_server(self.handle_client, addr, port, backlog=backlog)
         self.logger.info("web server started.")
+
+    async def stop(self):
+
+        self.srv.close()
+        await self.srv.wait_closed()
+        self.logger.info("web server stopped.")
 
     async def handle_client(self, reader, writer):
 
