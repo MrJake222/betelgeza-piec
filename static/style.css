@@ -1,0 +1,48 @@
+table, th, td {
+    border: 1px solid black;
+    border-collapse: collapse;
+}
+
+header {
+	font-weight: bold;
+	font-size: 20px;
+	margin-bottom: 2px;
+}
+
+section {
+	padding: 12px 10px;
+}
+
+article {
+    margin-left: 7px;
+}
+
+.password {
+    margin: 11px 0;
+}
+
+.cell {
+    padding: 2px 8px;
+}
+
+.channel, .rssi {
+    text-align: right;
+}
+
+.hidden {
+    font-style: italic;
+}
+
+.connected {
+	color: #267126;
+	background: #dfdfdf;
+}
+
+input[type=submit] {
+	width: 120px;
+	margin: 0 auto;
+    margin-top: 12px;
+
+	display: block;
+	height: 34px;
+}

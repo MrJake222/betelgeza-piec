@@ -109,6 +109,18 @@ class WiFi:
         config_parser.save_dict(CONFIG_FILE, config)
         self.logger.info("config saved.")
 
+    def scan(self):
+        sta = network.WLAN(network.STA_IF)
+
+        if self._mode == MODE_STA:
+            return sta.scan()
+
+        # AP mode
+        sta.active(True)
+        scan = sta.scan()
+        sta.active(False)
+        return scan
+
     def get_mode(self):
         return self._mode
 

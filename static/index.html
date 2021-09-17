@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>ESP 8266</title>
+    <link rel="stylesheet" href="style.css">
+
+    <script>
+        let name_map = ["check", "ssid", "bssid", "channel", "rssi", "authmode", "hidden"]
+        let auth_map = ["open", "WEP", "WPA-PSK", "WPA2-PSK", "WPA/WPA2-PSK"]
+
+        window.onload = async () => {
+
+            let resp = await fetch("/wifi_mode")
+            let json = await resp.json()
+            let current_mode = json["mode"].toLowerCase()
+            let r_ap = document.getElementById("radio_ap")
+            let r_sta = document.getElementById("radio_sta")
+            let sec_conn = document.getElementById("connections")
+            if (current_mode == "ap") {
+                r_ap.checked = 1
+                r_sta.checked = 0
+                sec_conn.style.display = "none"
+            } else {
+                r_ap.checked = 0
+                r_sta.checked = 1
+                sec_conn.style.display = "block"
+            }
+            r_ap.onchange = () => { sec_conn.style.display = "none" }
+            r_sta.onchange = () => { sec_conn.style.display = "block" }
+
+            resp = await fetch("/wifi_scan")
+            let data = await resp.json()
+            data = data.sort((a,b) => b["rssi"] - a["rssi"])
+
+            function make_row(values, header) {
+                let row = document.createElement("tr")
+                if (!header && values["connected"]) {
+                    row.classList.add("connected")
+                }
+
+                name_map.forEach(key => {
+                    let cell = document.createElement(header ? "th" : "td")
+                    row.appendChild(cell)
+
+                    cell.innerHTML = header ? key : values[key]
+
+                    cell.classList.add("cell")
+                    if (!header) {
+                        cell.classList.add(key)
+
+                        if (key == "hidden") {
+                            cell.innerHTML = values[key] == 1 ? "hidden" : ""
+                        }
+                    }
+
+                    if (key == "check") {
+                        cell.innerHTML = ""
+                        if (!header) {
+                            let radio = document.createElement("input")
+                            cell.appendChild(radio)
+                            radio.type = "radio"
+                            radio.name = "ssid"
+                            radio.value = values["ssid"]
+                            radio.checked = values["connected"]
+                        }
+                    }
+                })
+
+                return row
+            }
+            
+            let table = document.getElementById("wifi-networks")
+            table.appendChild(make_row(null, true))
+            data.forEach(net => table.appendChild(make_row(net, false)))
+        }
+    </script>
+</head>
+
+<body>
+    <h1>ESP config page</h1>
+    <form action="/set_config" method="POST">
+        <section>
+            <header>Mode</header>
+            <article>
+                <input type='radio' name='mode' value='ap' id="radio_ap" /> AP
+                <input type='radio' name='mode' value='sta' id="radio_sta" /> STA<br/>
+            </article>
+        </section>
+
+        <section id="connections">
+            <header>Connection</header>
+            <article>
+                <table id="wifi-networks"></table>
+                <div class="password">
+                    Password: <input type='password' name='pass'/><br/>
+                </div>
+            </article>
+        </section>
+        <input type='submit' value='Set config'/>
+        </form>
+    </form>
+</body>
+</html>

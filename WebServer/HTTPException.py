@@ -15,6 +15,10 @@ code_reason_map = {
 }
 
 class HTTPException(Exception):
-    def __init__(self, code, msg):
+    def __init__(self, code, msg, early=False):
         self.code = code
         self.msg = msg
+        self.early = early
+
+    def get_reason(self):
+        return code_reason_map[self.code]
