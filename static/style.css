@@ -29,6 +29,10 @@ article {
     text-align: right;
 }
 
+.authmode {
+	min-width: 116px;
+}
+
 .hidden {
     font-style: italic;
 }
@@ -40,9 +44,5 @@ article {
 
 input[type=submit] {
 	width: 120px;
-	margin: 0 auto;
-    margin-top: 12px;
-
-	display: block;
 	height: 34px;
 }
